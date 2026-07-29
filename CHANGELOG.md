@@ -1,0 +1,111 @@
+# Changelog
+
+## [7.0.0] - 2026-06-23
+
+### Changed
+
+- #528 [Confine manifest paths to GITHUB_WORKSPACE (**breaking**: workflows passing `manifests:` paths outside the workspace now fail with a clear error)](https://github.com/Azure/k8s-deploy/pull/528)
+- #527 [Pin release workflow to commit SHA for supply chain safety](https://github.com/Azure/k8s-deploy/pull/527)
+
+### Security
+
+- #528 [Harden URL fetcher error handling in writeYamlFromURLToFile](https://github.com/Azure/k8s-deploy/pull/528)
+- #537 [Bump undici from 6.25.0 to 6.27.0](https://github.com/Azure/k8s-deploy/pull/537)
+- #536 [Bump actions/checkout in /.github/workflows in the actions group](https://github.com/Azure/k8s-deploy/pull/536)
+- #534 [Bump the actions group with 3 updates](https://github.com/Azure/k8s-deploy/pull/534)
+- #533 [Bump esbuild from 0.28.0 to 0.28.1](https://github.com/Azure/k8s-deploy/pull/533)
+- #532 [Bump github/codeql-action in /.github/workflows in the actions group](https://github.com/Azure/k8s-deploy/pull/532)
+- #531 [Bump @types/node from 25.9.1 to 25.9.2 in the actions group](https://github.com/Azure/k8s-deploy/pull/531)
+- #530 [Bump the actions group in /.github/workflows with 2 updates](https://github.com/Azure/k8s-deploy/pull/530)
+- #529 [Bump the actions group with 2 updates](https://github.com/Azure/k8s-deploy/pull/529)
+- #526 [Bump the actions group in /.github/workflows with 2 updates](https://github.com/Azure/k8s-deploy/pull/526)
+- #525 [Bump the actions group with 2 updates](https://github.com/Azure/k8s-deploy/pull/525)
+- #524 [Bump @types/node from 25.7.0 to 25.9.0 in the actions group](https://github.com/Azure/k8s-deploy/pull/524)
+- #523 [Bump github/codeql-action in /.github/workflows in the actions group](https://github.com/Azure/k8s-deploy/pull/523)
+
+## [6.0.0] - 2026-04-17
+
+### Changed
+
+- #504 [Update Node.js runtime from node20 to node24](https://github.com/Azure/k8s-deploy/pull/504)
+- #500 [Update action version references in README to latest majors](https://github.com/Azure/k8s-deploy/pull/500)
+
+### Security
+
+- #506 [Bump undici from 6.23.0 to 6.24.1](https://github.com/Azure/k8s-deploy/pull/506)
+- #513 [Bump vite from 8.0.3 to 8.0.5](https://github.com/Azure/k8s-deploy/pull/513)
+- #509 [Bump the actions group across 1 directory with 4 updates](https://github.com/Azure/k8s-deploy/pull/509)
+- #510 [Bump the actions group across 1 directory with 2 updates](https://github.com/Azure/k8s-deploy/pull/510)
+- #511 [Bump vitest from 4.1.1 to 4.1.2](https://github.com/Azure/k8s-deploy/pull/511)
+- #514 [Bump the actions group with 2 updates](https://github.com/Azure/k8s-deploy/pull/514)
+- #501 [Bump @types/node from 25.3.3 to 25.4.0](https://github.com/Azure/k8s-deploy/pull/501)
+
+## [5.1.0] - 2026-03-03
+
+### Added
+
+- #458 [Ensure error messages display the correct namespace](https://github.com/Azure/k8s-deploy/pull/458)
+- #482 [docker driver](https://github.com/Azure/k8s-deploy/pull/482)
+- #492 [Migrate to esbuild/Vitest and upgrade @actions/\* to ESM-only versions](https://github.com/Azure/k8s-deploy/pull/492)
+- #498 [Add typecheck to build script](https://github.com/Azure/k8s-deploy/pull/498)
+
+## [5.0.4] - 2025-08-05
+
+### Added
+
+- #408 [Add missing README.md and action.yml parameters](https://github.com/Azure/k8s-deploy/pull/408)
+- #414 [Fix the major update packages including Jest](https://github.com/Azure/k8s-deploy/pull/414)
+- #418 [Add husky pre-commit hook.](https://github.com/Azure/k8s-deploy/pull/418)
+- #420 [Make namespace input optional](https://github.com/Azure/k8s-deploy/pull/420)
+- #424 [add server-side option for kubectl apply commands](https://github.com/Azure/k8s-deploy/pull/424)
+- #425 [Add timeout to the rollout status](https://github.com/Azure/k8s-deploy/pull/425)
+- #428 [Added additional check in getTempdirectory function](https://github.com/Azure/k8s-deploy/pull/428)
+- #432 [Added error check for canary promote actions](https://github.com/Azure/k8s-deploy/pull/432)
+- #436 [Add support for ScaledJob](https://github.com/Azure/k8s-deploy/pull/436)
+- #440 [Add Enhanced Deployment Error Reporting and Logging](https://github.com/Azure/k8s-deploy/pull/440)
+- #441 [Added timeout input description to README](https://github.com/Azure/k8s-deploy/pull/441)
+
+## [5.0.3] - 2025-04-16
+
+### Added
+
+- #398 case-insensitive resource type
+
+## [5.0.2] - 2025-04-15
+
+### Added
+
+- #396 Update new resource-type input for action
+
+## [5.0.1] - 2024-03-12
+
+### Added
+
+- #356 Add fleet support
+
+## [5.0.0] - 2024-03-12
+
+### Changed
+
+- #309 Updated to Node20 and upgraded release workflows to @v1 tag
+- #306 update release workflow to use new prefix, remove deprecated release
+- #303 fix: ensure imageNames are not empty strings
+- #299 bump release workflow sha
+- #298 bump minikube to fix runner deps
+- #297 update release workflow
+
+### Added
+
+- #304 add v prefix for version tagging
+- #302 adding ncc to build
+- #301 adding release workflow artifact fix
+
+## [4.10.0] - 2023-10-30
+
+### Added
+
+- #287 Make annotating resources optional
+- #283 Fix “Service” route-method of the Blue-Green strategy with some manifest files
+- #281 bump codeql to node 16
+- #279 upgrade codeql
+- #276 Fixes multiple namespaces bug

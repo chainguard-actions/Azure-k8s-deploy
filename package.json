@@ -1,0 +1,36 @@
+{
+   "name": "k8s-deploy-action",
+   "version": "7.0.0",
+   "author": "Deepak Sattiraju",
+   "license": "MIT",
+   "type": "module",
+   "scripts": {
+      "build": "tsc --noEmit && esbuild src/run.ts --bundle --platform=node --target=node20 --format=esm --outfile=lib/index.js --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
+      "typecheck": "tsc --noEmit",
+      "test": "vitest run",
+      "coverage": "vitest run --coverage",
+      "format": "prettier --write .",
+      "format-check": "prettier --check .",
+      "prepare": "husky"
+   },
+   "dependencies": {
+      "@actions/core": "^3.0.1",
+      "@actions/exec": "^3.0.0",
+      "@actions/io": "^3.0.2",
+      "@actions/tool-cache": "4.0.0",
+      "@octokit/core": "^7.0.6",
+      "@octokit/plugin-retry": "^8.1.0",
+      "js-yaml": "4.2.0",
+      "minimist": "^1.2.8"
+   },
+   "devDependencies": {
+      "@types/js-yaml": "^4.0.9",
+      "@types/minimist": "^1.2.5",
+      "@types/node": "^25.9.3",
+      "esbuild": "^0.28",
+      "husky": "^9.1.7",
+      "prettier": "^3.8.4",
+      "typescript": "6.0.3",
+      "vitest": "^4"
+   }
+}

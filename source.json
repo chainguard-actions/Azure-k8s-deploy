@@ -1,6 +1,11 @@
 {
   "owner": "Azure",
   "repo": "k8s-deploy",
-  "version": "",
-  "url": "https://github.com/Azure/k8s-deploy"
+  "version": "v7.0.0",
+  "commit_sha": "51ca02a8b7225fbd0924aac359c5b336a5f1e5b4",
+  "url": "https://github.com/Azure/k8s-deploy",
+  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
+  "test_agent_version": "2",
+  "harden_agent_version": "2"
 }

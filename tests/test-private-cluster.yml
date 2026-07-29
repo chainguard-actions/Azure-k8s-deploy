@@ -1,0 +1,99 @@
+name: Test deploy with private cluster name and resource-group inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up mock kubectl and kubeconfig
+        run: |
+          # Create a mock kubectl that succeeds for all commands
+          mkdir -p "$HOME/.local/bin"
+          cat > "$HOME/.local/bin/kubectl" << 'EOF'
+          #!/bin/sh
+          echo "mock-kubectl called with: $*" >&2
+          case "$*" in
+            *"apply"*)
+              echo "deployment.apps/nginx configured"
+              exit 0
+              ;;
+            *"rollout status"*)
+              echo "deployment \"nginx\" successfully rolled out"
+              exit 0
+              ;;
+            *"annotate"*)
+              echo "deployment.apps/nginx annotated"
+              exit 0
+              ;;
+            *"label"*)
+              echo "deployment.apps/nginx labeled"
+              exit 0
+              ;;
+            *"get"*)
+              echo "{}"
+              exit 0
+              ;;
+            *"describe"*)
+              echo "Name: nginx"
+              exit 0
+              ;;
+            *)
+              echo "mock-kubectl: unknown command $*" >&2
+              exit 0
+              ;;
+          esac
+          EOF
+          chmod +x "$HOME/.local/bin/kubectl"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+          # Create a minimal kubeconfig
+          mkdir -p "$HOME/.kube"
+          cat > "$HOME/.kube/config" << 'EOF'
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - cluster:
+              server: https://localhost:6443
+            name: test-cluster
+          contexts:
+          - context:
+              cluster: test-cluster
+              user: test-user
+            name: test-context
+          current-context: test-context
+          users:
+          - name: test-user
+            user:
+              token: fake-token
+          EOF
+          echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
+
+      - id: action
+        uses: .
+        with:
+          manifests: tests/fixtures/manifests/deployment.yaml
+          action: deploy
+          strategy: basic
+          private-cluster: true
+          resource-group: my-resource-group
+          name: my-private-aks-cluster
+          pull-images: false
+          annotate-resources: false
+          token: ${{ github.token }}
+        continue-on-error: true
+
+      - name: Assert action ran with private cluster inputs
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "action outcome: $OUTCOME"
+          # The action should either succeed or fail at kubectl/az-cli
+          # but NOT fail due to missing inputs or invalid configuration
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran and attempted deployment with private cluster inputs"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi

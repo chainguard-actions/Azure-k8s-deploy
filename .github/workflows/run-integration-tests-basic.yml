@@ -1,0 +1,61 @@
+name: Minikube Integration Tests - basic
+on:
+   pull_request:
+      branches:
+         - main
+         - 'releases/*'
+   push:
+      branches:
+         - main
+         - 'releases/*'
+   workflow_dispatch:
+
+permissions:
+   contents: read
+
+jobs:
+   run-integration-test:
+      name: Run Minikube Integration Tests
+      runs-on: ubuntu-22.04
+      env:
+         KUBECONFIG: /home/runner/.kube/config
+         NAMESPACE: test-${{ github.run_id }}
+      steps:
+         - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+         - uses: ./.github/actions/minikube-setup
+           name: Setup Minikube Environment
+           timeout-minutes: 5
+
+         - name: Create namespace to run tests
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: kubectl create ns "$NAMESPACE"
+
+         - name: Cleaning any previously created items
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-delete.py 'Service' 'all' "$NAMESPACE"
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'all' "$NAMESPACE"
+              python test/integration/k8s-deploy-delete.py 'Ingress' 'all' "$NAMESPACE"
+
+         - name: Executing deploy action for pod
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE }}
+              images: nginx:1.14.2
+              manifests: |
+                 test/integration/manifests/test.yml
+                 test/integration/manifests/manifest_test_dir/test.yml
+              action: deploy
+
+         - name: Checking if deployments and services were created
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-test.py "namespace=$NAMESPACE" kind=Deployment name=nginx-deployment containerName=nginx:1.14.2 labels=app:nginx,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_basic selectorLabels=app:nginx
+              python test/integration/k8s-deploy-test.py "namespace=$NAMESPACE" kind=Service name=nginx-service labels=workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_basic selectorLabels=app:nginx
+
+              python test/integration/k8s-deploy-test.py "namespace=$NAMESPACE" kind=Deployment name=nginx-deployment3 containerName=nginx:1.14.2 labels=app:nginx3,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_basic selectorLabels=app:nginx3
+              python test/integration/k8s-deploy-test.py "namespace=$NAMESPACE" kind=Service name=nginx-service3 labels=workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_basic selectorLabels=app:nginx3
