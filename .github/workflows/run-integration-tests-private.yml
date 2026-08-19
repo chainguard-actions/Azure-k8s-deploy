@@ -1,0 +1,97 @@
+name: Cluster Integration Tests - private cluster
+on:
+   pull_request:
+      branches:
+         - 'releases/*'
+   push:
+      branches:
+         - main
+   workflow_dispatch:
+
+permissions:
+   contents: read
+   id-token: write
+
+jobs:
+   run-integration-test:
+      name: Run Minikube Integration Tests
+      runs-on: ubuntu-22.04
+      env:
+         KUBECONFIG: /home/runner/.kube/config
+         NAMESPACE: test-${{ github.run_id }}
+      permissions:
+         contents: read
+         id-token: write
+      steps:
+         - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+         - name: Install dependencies
+           run: |
+              rm -rf node_modules/
+              npm install
+         - name: Install ncc
+           run: npm i -g @vercel/ncc
+         - name: Build
+           run: ncc build src/run.ts -o lib
+         - name: Azure login
+           uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+           with:
+              client-id: ${{ secrets.AZURE_CLIENT_ID }}
+              tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+              subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+         - uses: Azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
+           name: Install Kubectl
+
+         - name: Create private AKS cluster and set context
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              set +x
+              # create cluster
+              az group create --location eastus2 --name "$NAMESPACE"
+              az aks create --name "$NAMESPACE" --resource-group "$NAMESPACE" --enable-private-cluster --generate-ssh-keys
+              az aks get-credentials --resource-group "$NAMESPACE" --name "$NAMESPACE"
+
+         - name: Create namespace to run tests
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              az aks command invoke --resource-group "$NAMESPACE" --name "$NAMESPACE" --command "kubectl create ns $NAMESPACE"
+
+         - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # 5.5.0
+           name: Install Python
+           with:
+              python-version: '3.x'
+
+         - name: Executing deploy action for pod
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE }}
+              images: nginx:1.14.2
+              manifests: |
+                 test/integration/manifests/test.yml
+                 test/integration/manifests/test2.yml
+              action: deploy
+              private-cluster: true
+              resource-group: ${{ env.NAMESPACE }}
+              name: ${{ env.NAMESPACE }}
+
+         - name: Checking if deployments and services were created
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-test.py private="$NAMESPACE" namespace="$NAMESPACE" kind=Deployment name=nginx-deployment containerName=nginx:1.14.2 labels=app:nginx,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Cluster_Integration_Tests_-_private_cluster selectorLabels=app:nginx
+              python test/integration/k8s-deploy-test.py private="$NAMESPACE" namespace="$NAMESPACE" kind=Service name=nginx-service labels=workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Cluster_Integration_Tests_-_private_cluster selectorLabels=app:nginx
+
+              python test/integration/k8s-deploy-test.py private="$NAMESPACE" namespace="$NAMESPACE" kind=Deployment name=nginx-deployment2 containerName=nginx:1.14.2 labels=app:nginx2,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Cluster_Integration_Tests_-_private_cluster selectorLabels=app:nginx2
+              python test/integration/k8s-deploy-test.py private="$NAMESPACE" namespace="$NAMESPACE" kind=Service name=nginx-service2 labels=workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Cluster_Integration_Tests_-_private_cluster selectorLabels=app:nginx2
+
+         - name: Clean up AKS cluster
+           if: ${{ always() }}
+           env:
+              NAMESPACE: ${{ env.NAMESPACE }}
+           run: |
+              echo "deleting AKS cluster and resource group"
+              az aks delete --yes --resource-group "$NAMESPACE" --name "$NAMESPACE"
+              az group delete --resource-group "$NAMESPACE" --yes

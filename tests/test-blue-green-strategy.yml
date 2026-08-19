@@ -1,4 +1,4 @@
-name: Test canary deployment strategy
+name: Test blue-green deployment strategy
 on:
   workflow_dispatch:
 
@@ -37,11 +37,10 @@ jobs:
         continue-on-error: true
         with:
           manifests: tests/fixtures/manifests/deployment.yaml
-          strategy: canary
+          strategy: blue-green
           action: deploy
           namespace: default
-          percentage: 20
-          traffic-split-method: pod
+          route-method: service
           token: ${{ github.token }}
 
       - name: Assert action ran and failed gracefully (no cluster available)

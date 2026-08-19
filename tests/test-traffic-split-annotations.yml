@@ -1,4 +1,4 @@
-name: Test private cluster inputs (resource-group and name)
+name: Test traffic-split-annotations input
 on:
   workflow_dispatch:
 jobs:
@@ -33,13 +33,13 @@ jobs:
         continue-on-error: true
         with:
           manifests: /tmp/k8s-manifests/deployment.yaml
-          strategy: basic
+          strategy: canary
           action: deploy
           pull-images: false
           annotate-resources: false
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-aks-cluster
+          traffic-split-method: smi
+          traffic-split-annotations: "app.kubernetes.io/managed-by: my-controller"
+          percentage: 20
       - name: Assert action ran (no cluster context available, graceful failure expected)
         env:
           OUTCOME: ${{ steps.action.outcome }}
@@ -48,7 +48,7 @@ jobs:
           if [ "$OUTCOME" = "success" ]; then
             echo "PASS: action succeeded"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no cluster context or Azure credentials available)"
+            echo "PASS: action failed gracefully (no cluster context available)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1

@@ -1,4 +1,4 @@
-name: Test canary deployment strategy
+name: Test promote action
 on:
   workflow_dispatch:
 
@@ -32,21 +32,19 @@ jobs:
               token: fake-token-for-testing
           EOF
 
-      - id: deploy
+      - id: promote
         uses: .
         continue-on-error: true
         with:
           manifests: tests/fixtures/manifests/deployment.yaml
           strategy: canary
-          action: deploy
+          action: promote
           namespace: default
-          percentage: 20
-          traffic-split-method: pod
           token: ${{ github.token }}
 
       - name: Assert action ran and failed gracefully (no cluster available)
         env:
-          OUTCOME: ${{ steps.deploy.outcome }}
+          OUTCOME: ${{ steps.promote.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" = "success" ]; then
