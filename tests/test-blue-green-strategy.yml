@@ -1,4 +1,4 @@
-name: Test basic deploy strategy
+name: Test blue-green deployment strategy
 on:
   workflow_dispatch:
 jobs:
@@ -29,6 +29,18 @@ jobs:
                 containers:
                 - name: test-app
                   image: nginx:latest
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: test-app-svc
+            namespace: default
+          spec:
+            selector:
+              app: test-app
+            ports:
+            - port: 80
+              targetPort: 80
           EOF
 
       - id: deploy
@@ -36,8 +48,10 @@ jobs:
         continue-on-error: true
         with:
           manifests: tests/manifests/deployment.yaml
-          strategy: basic
+          strategy: blue-green
           action: deploy
+          route-method: service
+          version-switch-buffer: 0
           pull-images: false
           token: ${{ github.token }}
 

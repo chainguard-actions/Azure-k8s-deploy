@@ -1,0 +1,115 @@
+# This workflow is inspired by `run-integration-tests-bluegreen-ingress.yml` and introduces namespace-specific testing for manifests.
+# It ensures deployments respect manifest-defined namespaces and tests deployments to multiple namespaces.
+name: Minikube Integration Tests - Namespace Optional
+on:
+   pull_request:
+      branches:
+         - main
+         - 'releases/*'
+   push:
+      branches:
+         - main
+         - 'releases/*'
+   workflow_dispatch:
+
+permissions: {}
+
+jobs:
+   run-integration-test:
+      name: Namespace Optional Tests
+      runs-on: ubuntu-22.04
+      env:
+         KUBECONFIG: /home/runner/.kube/config
+         NAMESPACE1: integration-test-namespace1-${{ github.run_id }}
+         NAMESPACE2: integration-test-namespace2-${{ github.run_id }}
+      steps:
+         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+         - uses: ./.github/actions/minikube-setup
+           name: Setup Minikube Environment
+           timeout-minutes: 5
+
+         - name: Create namespaces for tests
+           run: |
+              kubectl create ns "$NAMESPACE1"
+              kubectl create ns "$NAMESPACE2"
+              kubectl create ns test-namespace
+
+         - name: Cleaning any previously created items
+           run: |
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'all' "$NAMESPACE1"
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'all' "$NAMESPACE2"
+
+         # This tests whether the deployment respects the namespace defined in the manifest instead of defaulting to "default" when namespace is not provided.
+         - name: Test - Handles namespace correctly based on manifest
+           uses: ./
+           with:
+              images: nginx
+              manifests: |
+                 test/integration/manifests/test_with_ns.yaml
+                 test/integration/manifests/test_no_ns.yaml
+              action: deploy # Deploys manifests to specified namespaces or uses the namespace defined in the manifest
+
+         - name: Verify Deployment - test_with_ns.yaml (test-namespace)
+           run: |
+              python test/integration/k8s-deploy-test.py \
+                namespace=test-namespace \
+                kind=Deployment \
+                name=test-deployment \
+                containerName=nginx \
+                labels=app:test-app,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_Namespace_Optional \
+                selectorLabels=app:test-app
+
+         - name: Verify Deployment - test_no_ns.yaml (default namespace)
+           run: |
+              python test/integration/k8s-deploy-test.py \
+                namespace=default \
+                kind=Deployment \
+                name=test-deployment-no-ns \
+                containerName=nginx \
+                labels=app:test-app,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_Namespace_Optional \
+                selectorLabels=app:test-app
+
+         # This tests whether the deployment works when a file is deployed to two different provided namespaces.
+         - name: Test - Deploys the resource to namespace1
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE1 }}
+              images: nginx
+              manifests: |
+                 test/integration/manifests/test_no_ns.yaml
+              action: deploy
+
+         - name: Test - Deploys the resource to namespace2
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE2 }}
+              images: nginx
+              manifests: |
+                 test/integration/manifests/test_no_ns.yaml
+              action: deploy
+
+         - name: Verify Deployments in NAMESPACE1 & NAMESPACE2
+           run: |
+              for ns in "$NAMESPACE1" "$NAMESPACE2"; do
+                python test/integration/k8s-deploy-test.py \
+                  namespace=$ns \
+                  kind=Deployment \
+                  name=test-deployment-no-ns \
+                  containerName=nginx \
+                  labels=app:test-app,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_Namespace_Optional \
+                  selectorLabels=app:test-app
+              done
+
+         - name: Cleanup
+           run: |
+              echo "Cleaning up resources..."
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'test-deployment' test-namespace
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'test-deployment-no-ns' "$NAMESPACE1"
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'test-deployment-no-ns' "$NAMESPACE2"
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'test-deployment-no-ns' default
+
+              kubectl delete ns "$NAMESPACE1"
+              kubectl delete ns "$NAMESPACE2"
+              kubectl delete ns test-namespace
+              rm -rf test_with_ns.yaml test_no_ns.yaml

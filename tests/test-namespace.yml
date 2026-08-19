@@ -1,4 +1,4 @@
-name: Test basic deploy strategy
+name: Test deployment with custom namespace
 on:
   workflow_dispatch:
 jobs:
@@ -15,7 +15,6 @@ jobs:
           kind: Deployment
           metadata:
             name: test-app
-            namespace: default
           spec:
             replicas: 1
             selector:
@@ -35,10 +34,12 @@ jobs:
         uses: .
         continue-on-error: true
         with:
+          namespace: staging
           manifests: tests/manifests/deployment.yaml
           strategy: basic
           action: deploy
           pull-images: false
+          annotate-namespace: false
           token: ${{ github.token }}
 
       - name: Assert action ran and failed gracefully (no cluster available)

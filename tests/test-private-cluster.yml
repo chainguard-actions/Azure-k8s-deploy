@@ -1,31 +1,55 @@
-name: Test private cluster deploy
+name: Test private cluster inputs (name and resource-group)
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_REF: refs/heads/main
-      GITHUB_EVENT_NAME: push
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create dummy manifest file
+        run: |
+          mkdir -p /tmp/k8s-manifests
+          cat > /tmp/k8s-manifests/deployment.yaml <<'EOF'
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: test-app
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: test-app
+            template:
+              metadata:
+                labels:
+                  app: test-app
+              spec:
+                containers:
+                - name: test-app
+                  image: nginx:latest
+          EOF
       - id: action
         uses: .
         continue-on-error: true
         with:
-          manifests: |
-            k8s/deployment.yaml
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-private-cluster
+          manifests: /tmp/k8s-manifests/deployment.yaml
+          images: nginx:latest
           strategy: basic
           action: deploy
+          private-cluster: true
+          resource-group: my-resource-group
+          name: my-private-aks-cluster
           token: ${{ github.token }}
-      - name: Assert action ran (expected failure without cluster)
+      - name: Assert action ran (private-cluster inputs accepted, or failed gracefully without cluster)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
-          echo "Action outcome: ${{ steps.action.outcome }}"
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: action was skipped, expected it to run"
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with private-cluster, resource-group, and name inputs"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no private cluster context available in test environment)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action ran as expected"
