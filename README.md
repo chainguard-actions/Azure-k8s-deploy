@@ -9,7 +9,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
 | v5.0.2 | [`v5.0.2`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.0.2) | — |
-| v5.0.3 | [`v5.0.3`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.0.3) | — |
+| v5.0.3 | [`v5.0.3`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.0.3) | [`b0f3371`](https://github.com/Azure/k8s-deploy/commit/b0f33712c6b266c3ddd7e96416fcc7a7837d98dc) |
 | v5.0.4 | [`v5.0.4`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.0.4) | — |
 | v5.1.0 | [`v5.1.0`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.1.0) | — |
 | v6.0.0 | [`v6.0.0`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v6.0.0) | [`c7ebd0d`](https://github.com/Azure/k8s-deploy/commit/c7ebd0d5f39477a23f1b5dea0f52e6db04adf28e) |
