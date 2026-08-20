@@ -1,4 +1,4 @@
-name: Test canary deployment strategy
+name: Test blue-green deployment strategy
 on:
   workflow_dispatch:
 jobs:
@@ -13,12 +13,12 @@ jobs:
         with:
           manifests: tests/fixtures/manifests/deployment.yaml
           action: deploy
-          strategy: canary
-          percentage: 20
-          traffic-split-method: pod
+          strategy: blue-green
+          route-method: service
+          version-switch-buffer: 0
           token: ${{ github.token }}
 
-      - name: Assert action ran with canary strategy (fails gracefully without cluster)
+      - name: Assert action ran with blue-green strategy (fails gracefully without cluster)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |

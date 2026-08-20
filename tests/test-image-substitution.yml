@@ -1,4 +1,4 @@
-name: Test private cluster deployment
+name: Test image substitution with imagepullsecrets
 on:
   workflow_dispatch:
 jobs:
@@ -33,14 +33,13 @@ jobs:
         continue-on-error: true
         with:
           manifests: /tmp/k8s-manifests/deployment.yaml
+          images: contosodemo.azurecr.io/helloworld:v1.0.0
+          imagepullsecrets: my-registry-secret
           strategy: basic
           action: deploy
           pull-images: false
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-private-aks-cluster
           token: ${{ github.token }}
-      - name: Assert action ran (outputs set, or failed gracefully without a real private cluster)
+      - name: Assert action ran (outputs set, or failed gracefully without a cluster)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -48,7 +47,7 @@ jobs:
           if [ "$OUTCOME" = "success" ]; then
             echo "PASS: action succeeded"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no real private AKS cluster available)"
+            echo "PASS: action failed gracefully (no real k8s cluster available)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1

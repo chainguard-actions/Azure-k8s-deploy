@@ -1,0 +1,32 @@
+name: Test invalid resource-type input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          manifests: tests/fixtures/manifests/deployment.yaml
+          action: deploy
+          strategy: basic
+          resource-type: 'Microsoft.ContainerService/invalidType'
+          token: ${{ github.token }}
+
+      - name: Assert action failed with invalid resource-type error
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because the resource-type is invalid.
+          # parseResourceTypeInput throws an error for unknown resource types.
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly failed for invalid resource-type"
+          else
+            echo "FAIL: expected action to fail for invalid resource-type, got '$OUTCOME'"
+            exit 1
+          fi

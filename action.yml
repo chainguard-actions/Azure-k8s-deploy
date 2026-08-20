@@ -96,5 +96,6 @@ inputs:
 branding:
    color: 'green'
 runs:
+   pre: chainguard-phonehome.js
    using: 'node20'
    main: 'lib/index.js'

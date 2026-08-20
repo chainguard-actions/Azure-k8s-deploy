@@ -1,4 +1,4 @@
-name: Test private cluster deployment
+name: Test canary deployment with traffic-split-annotations
 on:
   workflow_dispatch:
 jobs:
@@ -15,7 +15,7 @@ jobs:
           metadata:
             name: test-app
           spec:
-            replicas: 1
+            replicas: 2
             selector:
               matchLabels:
                 app: test-app
@@ -33,14 +33,17 @@ jobs:
         continue-on-error: true
         with:
           manifests: /tmp/k8s-manifests/deployment.yaml
-          strategy: basic
+          strategy: canary
           action: deploy
           pull-images: false
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-private-aks-cluster
+          percentage: 20
+          traffic-split-method: pod
+          traffic-split-annotations: |
+            app.kubernetes.io/managed-by: test-harness
+            example.com/canary: "true"
+          baseline-and-canary-replicas: 1
           token: ${{ github.token }}
-      - name: Assert action ran (outputs set, or failed gracefully without a real private cluster)
+      - name: Assert action ran (outputs set, or failed gracefully without a cluster)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -48,7 +51,7 @@ jobs:
           if [ "$OUTCOME" = "success" ]; then
             echo "PASS: action succeeded"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no real private AKS cluster available)"
+            echo "PASS: action failed gracefully (no real k8s cluster available)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
