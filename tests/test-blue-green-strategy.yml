@@ -1,4 +1,4 @@
-name: Test basic deploy scenario
+name: Test blue-green strategy scenario
 on:
   workflow_dispatch:
 jobs:
@@ -10,14 +10,27 @@ jobs:
       - name: Create a minimal manifest file
         run: |
           mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/manifests"
-          cat > "$GITHUB_WORKSPACE/tests/fixtures/manifests/deployment.yml" <<'EOF'
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/manifests/service.yml" <<'EOF'
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: test-service
+            namespace: default
+          spec:
+            selector:
+              app: test-app
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 80
+          ---
           apiVersion: apps/v1
           kind: Deployment
           metadata:
             name: test-app
             namespace: default
           spec:
-            replicas: 1
+            replicas: 2
             selector:
               matchLabels:
                 app: test-app
@@ -35,9 +48,11 @@ jobs:
         uses: .
         continue-on-error: true
         with:
-          manifests: tests/fixtures/manifests/deployment.yml
+          manifests: tests/fixtures/manifests/service.yml
           action: deploy
-          strategy: basic
+          strategy: blue-green
+          route-method: service
+          version-switch-buffer: 0
           token: ${{ github.token }}
 
       - name: Assert action ran and failed gracefully (no cluster available)

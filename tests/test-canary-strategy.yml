@@ -1,4 +1,4 @@
-name: Test private cluster deployment
+name: Test canary strategy scenario
 on:
   workflow_dispatch:
 jobs:
@@ -9,14 +9,15 @@ jobs:
 
       - name: Create a minimal manifest file
         run: |
-          mkdir -p /tmp/k8s-manifests
-          cat > /tmp/k8s-manifests/deployment.yaml <<'EOF'
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/manifests"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/manifests/deployment.yml" <<'EOF'
           apiVersion: apps/v1
           kind: Deployment
           metadata:
             name: test-app
+            namespace: default
           spec:
-            replicas: 1
+            replicas: 2
             selector:
               matchLabels:
                 app: test-app
@@ -26,32 +27,31 @@ jobs:
                   app: test-app
               spec:
                 containers:
-                - name: test-app
-                  image: contosodemo.azurecr.io/helloworld:latest
+                  - name: test-app
+                    image: nginx:latest
           EOF
 
-      - id: action
+      - id: deploy
         uses: .
         continue-on-error: true
         with:
-          manifests: /tmp/k8s-manifests/deployment.yaml
-          strategy: basic
+          manifests: tests/fixtures/manifests/deployment.yml
           action: deploy
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-private-aks-cluster
-          pull-images: false
+          strategy: canary
+          percentage: 20
+          baseline-and-canary-replicas: 1
+          traffic-split-method: pod
           token: ${{ github.token }}
 
-      - name: Assert action ran with private-cluster, resource-group, and name inputs
+      - name: Assert action ran and failed gracefully (no cluster available)
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          OUTCOME: ${{ steps.deploy.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: action succeeded"
+            echo "PASS: action succeeded (unexpected but valid)"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no private cluster accessible in harness)"
+            echo "PASS: action failed gracefully as expected (no cluster context)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1

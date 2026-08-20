@@ -1,0 +1,79 @@
+name: Minikube Integration Tests - resource annotation
+on:
+   pull_request:
+      branches:
+         - main
+         - 'releases/*'
+   push:
+      branches:
+         - main
+         - 'releases/*'
+   workflow_dispatch:
+
+permissions: {}
+
+jobs:
+   run-integration-test:
+      name: Resource Annotation Tests
+      runs-on: ubuntu-22.04
+      permissions:
+         contents: read
+      env:
+         KUBECONFIG: /home/runner/.kube/config
+         NAMESPACE: test-${{ github.run_id }}
+      steps:
+         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+         - uses: ./.github/actions/minikube-setup
+           name: Setup Minikube Environment
+           timeout-minutes: 5
+
+         - name: Create namespace to run tests
+           env:
+              NS: ${{ env.NAMESPACE }}
+           run: kubectl create ns "$NS"
+
+         - name: Cleaning any previously created items
+           env:
+              NS: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-delete.py 'Service' 'all' "$NS"
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'all' "$NS"
+              python test/integration/k8s-deploy-delete.py 'Ingress' 'all' "$NS"
+
+         - name: Executing deploy action for pod with resource annotation enabled by default
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE }}
+              images: nginx:1.14.2
+              manifests: |
+                 test/integration/manifests/test.yml
+              action: deploy
+
+         - name: Checking if deployments is created with additional resource annotation
+           env:
+              NS: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-test.py namespace="$NS" kind=Deployment name=nginx-deployment containerName=nginx:1.14.2 labels=app:nginx,workflow:actions.github.com-k8s-deploy,workflowFriendlyName:Minikube_Integration_Tests_-_resource_annotation selectorLabels=app:nginx annotations=actions.github.com/k8s-deploy,deployment.kubernetes.io/revision,kubectl.kubernetes.io/last-applied-configuration
+
+         - name: Cleaning previously created deployment
+           env:
+              NS: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-delete.py 'Deployment' 'all' "$NS"
+
+         - name: Executing deploy action for pod with resource annotation disabled
+           uses: ./
+           with:
+              namespace: ${{ env.NAMESPACE }}
+              images: nginx:1.14.2
+              manifests: |
+                 test/integration/manifests/test.yml
+              action: deploy
+              annotate-resources: false
+
+         - name: Checking if deployment is created without additional resource annotation
+           env:
+              NS: ${{ env.NAMESPACE }}
+           run: |
+              python test/integration/k8s-deploy-test.py namespace="$NS" kind=Deployment name=nginx-deployment containerName=nginx:1.14.2 selectorLabels=app:nginx annotations=deployment.kubernetes.io/revision,kubectl.kubernetes.io/last-applied-configuration

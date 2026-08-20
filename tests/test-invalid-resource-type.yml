@@ -1,4 +1,4 @@
-name: Test private cluster deployment
+name: Test invalid resource-type input validation
 on:
   workflow_dispatch:
 jobs:
@@ -9,12 +9,13 @@ jobs:
 
       - name: Create a minimal manifest file
         run: |
-          mkdir -p /tmp/k8s-manifests
-          cat > /tmp/k8s-manifests/deployment.yaml <<'EOF'
+          mkdir -p "$GITHUB_WORKSPACE/tests/fixtures/manifests"
+          cat > "$GITHUB_WORKSPACE/tests/fixtures/manifests/deployment.yml" <<'EOF'
           apiVersion: apps/v1
           kind: Deployment
           metadata:
             name: test-app
+            namespace: default
           spec:
             replicas: 1
             selector:
@@ -26,32 +27,30 @@ jobs:
                   app: test-app
               spec:
                 containers:
-                - name: test-app
-                  image: contosodemo.azurecr.io/helloworld:latest
+                  - name: test-app
+                    image: nginx:latest
           EOF
 
-      - id: action
+      - id: deploy
         uses: .
         continue-on-error: true
         with:
-          manifests: /tmp/k8s-manifests/deployment.yaml
-          strategy: basic
+          manifests: tests/fixtures/manifests/deployment.yml
           action: deploy
-          private-cluster: true
-          resource-group: my-resource-group
-          name: my-private-aks-cluster
-          pull-images: false
+          strategy: basic
+          resource-type: Microsoft.ContainerService/invalidType
           token: ${{ github.token }}
 
-      - name: Assert action ran with private-cluster, resource-group, and name inputs
+      - name: Assert action failed due to invalid resource-type
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          OUTCOME: ${{ steps.deploy.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: action succeeded"
-          elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no private cluster accessible in harness)"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected with invalid resource-type"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action should have failed with invalid resource-type but succeeded"
+            exit 1
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
