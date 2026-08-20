@@ -1,4 +1,4 @@
-name: Test basic deploy scenario
+name: Test blue-green strategy scenario
 on:
   workflow_dispatch:
 jobs:
@@ -21,9 +21,11 @@ jobs:
           manifests: |
             ${{ github.workspace }}/tests/fixtures/manifests/deployment.yaml
             ${{ github.workspace }}/tests/fixtures/manifests/service.yaml
-          strategy: basic
+          strategy: blue-green
           action: deploy
           namespace: default
+          route-method: service
+          version-switch-buffer: 0
           pull-images: false
           annotate-resources: false
 

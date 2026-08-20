@@ -1,4 +1,4 @@
-name: Test basic deploy scenario
+name: Test promote action scenario
 on:
   workflow_dispatch:
 jobs:
@@ -14,22 +14,23 @@ jobs:
           sudo mv kubectl /usr/local/bin/kubectl
           kubectl version --client
 
-      - id: deploy
+      - id: promote
         uses: .
         continue-on-error: true
         with:
           manifests: |
             ${{ github.workspace }}/tests/fixtures/manifests/deployment.yaml
             ${{ github.workspace }}/tests/fixtures/manifests/service.yaml
-          strategy: basic
-          action: deploy
+          strategy: blue-green
+          action: promote
           namespace: default
+          route-method: service
           pull-images: false
           annotate-resources: false
 
       - name: Assert action ran and failed gracefully (no k8s cluster available)
         env:
-          OUTCOME: ${{ steps.deploy.outcome }}
+          OUTCOME: ${{ steps.promote.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" = "success" ]; then

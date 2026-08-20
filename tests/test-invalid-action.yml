@@ -1,4 +1,4 @@
-name: Test basic deploy scenario
+name: Test invalid action input handling
 on:
   workflow_dispatch:
 jobs:
@@ -20,22 +20,22 @@ jobs:
         with:
           manifests: |
             ${{ github.workspace }}/tests/fixtures/manifests/deployment.yaml
-            ${{ github.workspace }}/tests/fixtures/manifests/service.yaml
           strategy: basic
-          action: deploy
+          action: invalid-action-value
           namespace: default
           pull-images: false
           annotate-resources: false
 
-      - name: Assert action ran and failed gracefully (no k8s cluster available)
+      - name: Assert action failed (invalid action value should cause failure)
         env:
           OUTCOME: ${{ steps.deploy.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: action succeeded unexpectedly (k8s cluster was available)"
-          elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully as expected (no k8s cluster context)"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected for invalid action input"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action should have failed with invalid action value"
+            exit 1
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1

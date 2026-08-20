@@ -1,4 +1,4 @@
-name: Test basic deploy scenario
+name: Test canary strategy scenario
 on:
   workflow_dispatch:
 jobs:
@@ -20,10 +20,11 @@ jobs:
         with:
           manifests: |
             ${{ github.workspace }}/tests/fixtures/manifests/deployment.yaml
-            ${{ github.workspace }}/tests/fixtures/manifests/service.yaml
-          strategy: basic
+          strategy: canary
           action: deploy
           namespace: default
+          percentage: 20
+          traffic-split-method: pod
           pull-images: false
           annotate-resources: false
 
