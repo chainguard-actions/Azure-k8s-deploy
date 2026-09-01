@@ -14,6 +14,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v5.1.0 | [`v5.1.0`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v5.1.0) | [`c8cfec8`](https://github.com/Azure/k8s-deploy/commit/c8cfec839dc09896b3b8cc40cd13d04792680771) |
 | v6.0.0 | [`v6.0.0`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v6.0.0) | [`c7ebd0d`](https://github.com/Azure/k8s-deploy/commit/c7ebd0d5f39477a23f1b5dea0f52e6db04adf28e) |
 | v7.0.0 | [`v7.0.0`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v7.0.0) | [`51ca02a`](https://github.com/Azure/k8s-deploy/commit/51ca02a8b7225fbd0924aac359c5b336a5f1e5b4) |
+| v7.0.1 | [`v7.0.1`](https://github.com/chainguard-actions/Azure-k8s-deploy/tree/v7.0.1) | [`bf1ec05`](https://github.com/Azure/k8s-deploy/commit/bf1ec05e1d736ac4ac70bae889d3ec48c79e2213) |
 
 ## Privacy
 
