@@ -1,0 +1,13 @@
+npm run typecheck || {
+  echo ""
+  echo "❌ Type check failed."
+  echo "💡 Run 'npm run typecheck' to see errors."
+  exit 1
+}
+npm test
+npm run format-check || {
+  echo ""
+  echo "❌ Formatting check failed."
+  echo "💡 Run 'npm run format' or 'prettier --write .' to fix formatting issues."
+  exit 1
+}

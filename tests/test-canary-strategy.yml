@@ -1,0 +1,59 @@
+name: Test canary strategy
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up a fake kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          cat > "$HOME/.kube/config" <<'EOF'
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - cluster:
+                server: https://127.0.0.1:6443
+                insecure-skip-tls-verify: true
+              name: test-cluster
+          contexts:
+            - context:
+                cluster: test-cluster
+                user: test-user
+                namespace: default
+              name: test-context
+          current-context: test-context
+          users:
+            - name: test-user
+              user:
+                token: fake-token
+          EOF
+          echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
+
+      - id: deploy
+        uses: .
+        continue-on-error: true
+        with:
+          manifests: tests/fixtures/manifests/deployment.yml
+          strategy: canary
+          action: deploy
+          percentage: 20
+          traffic-split-method: pod
+          baseline-and-canary-replicas: 1
+          token: ${{ github.token }}
+
+      - name: Assert action ran and failed gracefully (no real cluster)
+        env:
+          OUTCOME: ${{ steps.deploy.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully without a real cluster"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

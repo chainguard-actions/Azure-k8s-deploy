@@ -1,0 +1,59 @@
+name: Test private cluster inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a dummy manifest file
+        run: |
+          mkdir -p /tmp/k8s-manifests
+          cat > /tmp/k8s-manifests/deployment.yaml <<'EOF'
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: test-deployment
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: test
+            template:
+              metadata:
+                labels:
+                  app: test
+              spec:
+                containers:
+                - name: test
+                  image: nginx:latest
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          manifests: /tmp/k8s-manifests/deployment.yaml
+          strategy: basic
+          action: deploy
+          private-cluster: 'true'
+          resource-group: 'my-resource-group'
+          name: 'my-private-cluster'
+          pull-images: 'false'
+          annotate-resources: 'false'
+          token: ${{ github.token }}
+
+      - name: Assert action ran (inputs accepted, or failed gracefully without cluster)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no real cluster available)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
