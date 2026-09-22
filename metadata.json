@@ -1,7 +1,0 @@
-{
-  "owner": "Azure",
-  "name": "k8s-deploy",
-  "visibility": "internal",
-  "description": "Deploy to a Kubernetes cluster including, but not limited to Azure Kubernetes Service (AKS) clusters",
-  "block_publish": false
-}
