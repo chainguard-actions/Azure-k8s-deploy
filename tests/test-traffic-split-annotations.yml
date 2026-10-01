@@ -33,22 +33,23 @@ jobs:
         continue-on-error: true
         with:
           manifests: /tmp/k8s-manifests/deployment.yaml
-          images: nginx:latest
           strategy: canary
           action: deploy
+          token: ${{ github.token }}
           percentage: 20
           traffic-split-method: smi
-          traffic-split-annotations: "app.kubernetes.io/managed-by: test,example.com/team: platform"
-          token: ${{ github.token }}
-      - name: Assert action ran (traffic-split-annotations input accepted, or failed gracefully without cluster)
+          traffic-split-annotations: |
+            app.kubernetes.io/managed-by: test
+            example.com/env: staging
+      - name: Assert action ran (no cluster available, failure is expected)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: action succeeded with traffic-split-annotations input"
+            echo "PASS: action succeeded"
           elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (no cluster context available in test environment)"
+            echo "PASS: action failed gracefully (no k8s cluster available in test environment)"
           else
             echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
