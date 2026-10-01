@@ -38,9 +38,13 @@ runs:
         if: inputs.install-smi == 'true'
         shell: bash
         run: |
-           curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge | sh
+           LINKERD_INSTALL_SCRIPT="$(mktemp)"
+           curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge -o "$LINKERD_INSTALL_SCRIPT"
+           sh "$LINKERD_INSTALL_SCRIPT"
            export PATH=$PATH:/home/runner/.linkerd2/bin
-           curl -sL https://linkerd.github.io/linkerd-smi/install | sh
+           SMI_INSTALL_SCRIPT="$(mktemp)"
+           curl -sL https://linkerd.github.io/linkerd-smi/install -o "$SMI_INSTALL_SCRIPT"
+           sh "$SMI_INSTALL_SCRIPT"
            kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
 
            linkerd install --crds | kubectl apply -f -
