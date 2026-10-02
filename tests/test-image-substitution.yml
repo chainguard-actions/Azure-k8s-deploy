@@ -1,4 +1,4 @@
-name: Test traffic-split-annotations input
+name: Test image substitution inputs (images and imagepullsecrets)
 on:
   workflow_dispatch:
 jobs:
@@ -35,12 +35,11 @@ jobs:
         continue-on-error: true
         with:
           manifests: /tmp/k8s-manifests/deployment.yaml
-          strategy: canary
+          images: contosodemo.azurecr.io/helloworld:test
+          imagepullsecrets: my-registry-secret
+          strategy: basic
           action: deploy
           pull-images: false
-          percentage: 20
-          traffic-split-method: smi
-          traffic-split-annotations: "app.kubernetes.io/managed-by: my-controller"
           token: ${{ github.token }}
 
       - name: Assert action ran (no cluster available, graceful failure expected)
